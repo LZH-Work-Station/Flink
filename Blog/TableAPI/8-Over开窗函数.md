@@ -15,7 +15,7 @@
 
 - Table API 提供了 Over 类，来配置 Over 窗口的属性
 
-#### [无界Over Windows](https://ashiamd.github.io/docsify-notes/#/study/BigData/Flink/尚硅谷Flink入门到实战-学习笔记?id=无界over-windows)
+#### [无界Over Windows](https://ashiamd.github.io/docsify-notes/#/study/BigData/Flink/尚硅谷Flink入门到实战-学习笔记?id=无界over-windows)(无界代表有多少数据就聚合多少数据)
 
 - 可以在事件时间或处理时间，以及指定为时间间隔、或行计数的范围内，定义 Over windows
 - 无界的 over window 是使用常量指定的
@@ -77,3 +77,35 @@ WINDOW w AS (
   ORDER BY proctime
   ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
 ```
+
+### 3. 测试
+
+```java
+  // 5. 窗口操作     
+    // 5.1 Group Window
+    // table API
+    Table resultTable = dataTable.window(Tumble.over("10.seconds").on("rt").as("tw"))
+      .groupBy("id, tw")
+      .select("id, id.count, temp.avg, tw.end");
+
+    // SQL
+    Table resultSqlTable = tableEnv.sqlQuery(
+        "select id, count(id) as cnt, avg(temp) as avgTemp, tumble_end(rt, interval '10' second) " +
+        "from sensor group by id, tumble(rt, interval '10' second)");
+
+    // 5.2 Over Window
+    // table API
+    Table overResult = dataTable.window(Over.partitionBy("id").orderBy("rt").preceding("2.rows").as("ow"))
+      .select("id, rt, id.count over ow, temp.avg over ow");
+
+    // SQL
+    Table overSqlResult = tableEnv.sqlQuery(
+        " select id, rt, count(id) over ow, avg(temp) over ow " +
+        " from sensor " +
+        " window ow as (partition by id order by rt rows between 2 preceding and current row)");
+
+   
+    tableEnv.toAppendStream(overResult, Row.class).print("result");
+    tableEnv.toRetractStream(overSqlResult, Row.class).print("sql");
+```
+
