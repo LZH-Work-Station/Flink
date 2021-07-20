@@ -20,6 +20,7 @@
 - 可以在事件时间或处理时间，以及指定为时间间隔、或行计数的范围内，定义 Over windows
 - 无界的 over window 是使用常量指定的
 - partitionBy是可选项
+- UNBOUNDED_RANGE代表之前的数据都会被统计
 
 ```java
 // 无界的事件时间over window (时间字段 "rowtime")
